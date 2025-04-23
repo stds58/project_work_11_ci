@@ -1,0 +1,65 @@
+---
+- name: Ensure dependencies installed
+  apt:
+    name:
+      - curl
+      - tar
+      - libicu-dev
+      - libssl-dev
+    state: present
+
+- name: Create runner directory
+  file:
+    path: /opt/actions-runner
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Download GitHub Actions Runner
+  get_url:
+    url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
+    dest: "/opt/actions-runner/actions-runner.tar.gz"
+    owner: "{{ ansible_user }}"
+    checksum: "sha256:{{ github_runner_checksum }}"
+    timeout: 30
+
+- name: Extract runner
+  unarchive:
+    src: "/opt/actions-runner/actions-runner.tar.gz"
+    dest: "/opt/actions-runner"
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Install systemd service
+  template:
+    src: "github-runner.service.j2"
+    dest: "/etc/systemd/system/github-runner.service"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart GitHub Runner
+
+- name: Register runner with GitHub
+  shell: |
+    ./config.sh \
+      --url "https://github.com/{{ github_repo }}" \
+      --token "{{ github_runner_token }}" \
+      --name "{{ runner_name | default(inventory_hostname) }}" \
+      --work "_work" \
+      --labels "{{ runner_labels | default('linux,x64') }}" \
+      --unattended \
+      --replace
+  args:
+    chdir: /opt/actions-runner
+    creates: /opt/actions-runner/.runner  # Prevent re-registration
+  when: github_runner_token is defined
+  notify: Restart GitHub Runner
+
+- name: Ensure service is running
+  systemd:
+    name: github-runner
+    state: started
+    enabled: yes

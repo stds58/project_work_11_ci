@@ -1,0 +1,10 @@
+---
+# wsl ansible-playbook -i inventoy playbook.yml
+- name: Deploy CI Server
+  hosts: vm1
+  become: true
+  roles:
+    - common
+    - docker
+    - jenkins
+    - github_runner

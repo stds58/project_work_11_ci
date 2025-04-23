@@ -1,0 +1,31 @@
+name: CI Pipeline
+
+on:
+  push:
+    paths:
+      - 'html/index.html'
+
+jobs:
+  test-nginx:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      # Установка прав должна быть сразу после checkout
+      - name: Make scripts executable
+        run: chmod +x ./scripts/*.sh
+
+      - name: Build Docker image
+        run: docker build -t nginx-ci .
+
+      - name: Run container
+        run: docker run -d -p 9889:80 --name nginx-ci nginx-ci
+
+      - name: Verify response
+        run: |
+          ./scripts/check_response.sh || (./scripts/notify.sh "CI Checks Failed"; exit 1)
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f nginx-ci
+

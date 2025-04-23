@@ -1,0 +1,7 @@
+---
+- name: Restart GitHub Runner
+  systemd:
+    name: github-runner  # Имя сервиса из .service-файла
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
