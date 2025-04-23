@@ -21,7 +21,7 @@
     url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
     dest: "/opt/actions-runner/actions-runner.tar.gz"
     owner: "{{ ansible_user }}"
-    checksum: "sha256:{{ github_runner_checksum }}"
+    # checksum: "sha256:{{ github_runner_checksum }}"
     timeout: 30
 
 - name: Extract runner

@@ -30,3 +30,36 @@
     name: docker
     state: started
     enabled: yes
+
+- name: Ensure project directory exists
+  file:
+    path: /opt/ci-project
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Copy project files
+  copy:
+    src: "files/"  # Копируем ВСЁ (включая Dockerfile и html/)
+    dest: "/opt/ci-project/"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Build Docker image
+  community.docker.docker_image:
+    name: nginx-ci
+    build:
+      path: /opt/ci-project  # Путь к Dockerfile
+    source: build
+    state: present
+
+- name: Run container
+  community.docker.docker_container:
+    name: nginx-ci
+    image: nginx-ci
+    ports:
+      - "9889:80"
+    state: started
+    restart_policy: unless-stopped
+

@@ -1,10 +1,10 @@
 ---
-# wsl ansible-playbook -i inventoy playbook.yml
+# wsl ansible-playbook -i inventory playbook.yml
 - name: Deploy CI Server
-  hosts: vm1
+  hosts: web
   become: true
   roles:
-    - common
+    #- common
     - docker
-    - jenkins
-    - github_runner
+    #- jenkins
+    #- github_runner

@@ -4,14 +4,15 @@
     name: openjdk-17-jre
     state: present
 
-- name: Add Jenkins repository key
-  apt_key:
+- name: Download Jenkins GPG key
+  ansible.builtin.get_url:
     url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
-    state: present
+    dest: /usr/share/keyrings/jenkins-keyring.asc
+    mode: '0644'
 
 - name: Add Jenkins repository
-  apt_repository:
-    repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
     state: present
     filename: jenkins
 
@@ -21,29 +22,35 @@
     state: present
     update_cache: yes
 
-- name: Ensure Jenkins is running
+- name: Start Jenkins service
   service:
     name: jenkins
     state: started
     enabled: yes
 
-- name: Wait for Jenkins to initialize
-  uri:
-    url: "http://localhost:8080"
-    status_code: 200
-    timeout: 30
-  register: result
-  until: result.status == 200
-  retries: 10
-  delay: 10
+- name: Wait for Jenkins to start
+  wait_for:
+    port: 8080
+    timeout: 300
 
-- name: Add Jenkins to docker group
+- name: Add jenkins user to docker group
   user:
     name: jenkins
     groups: docker
     append: yes
   notify: Restart Jenkins
 
-- name: Show initial admin password
+- name: Display initial admin password
+  shell: |
+    if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
+      cat /var/lib/jenkins/secrets/initialAdminPassword
+    else
+      echo "Password file not found yet. Please wait and check Jenkins logs."
+      journalctl -u jenkins --no-pager | grep "InitialAdminPassword"
+    fi
+  register: jenkins_password
+  changed_when: false
+
+- name: Show password message
   debug:
-    msg: "Initial admin password: {{ lookup('file', '/var/lib/jenkins/secrets/initialAdminPassword') }}"
+    msg: "Initial admin password: {{ jenkins_password.stdout }}"
