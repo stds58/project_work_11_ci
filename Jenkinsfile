@@ -68,26 +68,35 @@ pipeline {
         stage('Verify') {
     steps {
         script {
-            // Проверка кода ответа
-            def status = sh(
+            // Проверка HTTP-статуса
+            def httpStatus = sh(
                 script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:9889',
                 returnStdout: true
             ).trim()
 
-            // Проверка MD5 (используем файл из docker-build)
+            // Получаем MD5 локального файла
             def localMd5 = sh(
                 script: "md5sum docker-build/index.html | awk '{print \$1}'",
                 returnStdout: true
             ).trim()
 
+            // Получаем MD5 удаленного файла
             def remoteMd5 = sh(
                 script: "curl -s http://localhost:9889 | md5sum | awk '{print \$1}'",
                 returnStdout: true
-            )
+            ).trim()
 
-            if (status != '200' || localMd5 != remoteMd5) {
-                error("Проверка не пройдена. HTTP: ${status}, MD5: local=${localMd5} remote=${remoteMd5}")
+            echo "Результаты проверки: HTTP=${httpStatus}, localMD5=${localMd5}, remoteMD5=${remoteMd5}"
+
+            // Явное сравнение результатов
+            if (httpStatus != "200") {
+                error("HTTP проверка не пройдена: статус ${httpStatus}")
             }
+            if (localMd5 != remoteMd5) {
+                error("MD5 проверка не пройдена: local=${localMd5} remote=${remoteMd5}")
+            }
+
+            echo "Проверка успешно пройдена"
         }
     }
 }
