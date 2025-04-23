@@ -32,7 +32,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'docker build -t nginx-ci .'
+                sh 'docker build -t nginx-ci -f /opt/ci-project/Dockerfile .'
             }
         }
 
