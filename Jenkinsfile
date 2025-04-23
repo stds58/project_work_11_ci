@@ -103,41 +103,40 @@ pipeline {
     }
 
     post {
-        always {
-            // Очистка Docker
-            sh 'docker system prune -f'
+    always {
+        // Архивируем правильный файл
+        archiveArtifacts artifacts: 'docker-build/index.html', fingerprint: true
 
-            // Логирование
-            archiveArtifacts artifacts: 'index.html', fingerprint: true
-        }
-
-        failure {
-            // Оповещение в Telegram
-            script {
-                def message = """
-                ❌ CI Failed
-                Build: ${env.BUILD_URL}
-                Причина: ${currentBuild.currentResult}
-                Изменения: ${env.GIT_COMMIT}
-                """
-
-                sh """
-                curl -s -X POST \
-                "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-                -d "chat_id=${TELEGRAM_CHAT_ID}&text=${message}"
-                """
-            }
-        }
-
-        success {
-            // Оповещение об успехе
-            script {
-                sh """
-                curl -s -X POST \
-                "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-                -d "chat_id=${TELEGRAM_CHAT_ID}&text=✅ CI Success: ${env.BUILD_URL}"
-                """
+        // Очистка Docker
+        sh 'docker system prune -f'
+    }
+    failure {
+        // Оповещение в Telegram (исправленная версия)
+        script {
+            withCredentials([
+                string(credentialsId: 'TELEGRAM_BOT_TOKEN', variable: 'BOT_TOKEN'),
+                string(credentialsId: 'TELEGRAM_CHAT_ID', variable: 'CHAT_ID')
+            ]) {
+                sh '''
+                    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+                    -d "chat_id=${CHAT_ID}&text=❌ CI Failed: ${env.BUILD_URL}"
+                '''
             }
         }
     }
+    success {
+        // Оповещение об успехе
+        script {
+            withCredentials([
+                string(credentialsId: 'TELEGRAM_BOT_TOKEN', variable: 'BOT_TOKEN'),
+                string(credentialsId: 'TELEGRAM_CHAT_ID', variable: 'CHAT_ID')
+            ]) {
+                sh '''
+                    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+                    -d "chat_id=${CHAT_ID}&text=✅ CI Success: ${env.BUILD_URL}"
+                '''
+            }
+        }
+    }
+}
 }
