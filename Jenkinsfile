@@ -31,10 +31,20 @@ pipeline {
         }
 
         stage('Build') {
-            steps {
-                sh 'docker build -t nginx-ci -f /opt/ci-project/Dockerfile .'
-            }
+    steps {
+        // Копируем необходимые файлы из Ansible роли в рабочую директорию
+        sh '''
+            mkdir -p docker-build
+            cp ansible/roles/docker/files/Dockerfile docker-build/
+            cp ansible/roles/docker/files/index.html docker-build/
+        '''
+
+        // Собираем Docker образ с указанием правильного контекста
+        dir('docker-build') {
+            sh 'docker build -t nginx-ci .'
         }
+    }
+}
 
         stage('Stop Old Container') {
             steps {
