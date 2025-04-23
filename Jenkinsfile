@@ -66,31 +66,31 @@ pipeline {
         }
 
         stage('Verify') {
-            steps {
-                script {
-                    // Проверка кода ответа
-                    def status = sh(
-                        script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:9889',
-                        returnStdout: true
-                    ).trim()
+    steps {
+        script {
+            // Проверка кода ответа
+            def status = sh(
+                script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:9889',
+                returnStdout: true
+            ).trim()
 
-                    // Проверка MD5 (сравнение локального и удалённого файла)
-                    def localMd5 = sh(
-                        script: "md5sum index.html | awk '{print \$1}'",
-                        returnStdout: true
-                    ).trim()
+            // Проверка MD5 (используем файл из docker-build)
+            def localMd5 = sh(
+                script: "md5sum docker-build/index.html | awk '{print \$1}'",
+                returnStdout: true
+            ).trim()
 
-                    def remoteMd5 = sh(
-                        script: "curl -s http://localhost:9889 | md5sum | awk '{print \$1}'",
-                        returnStdout: true
-                    ).trim()
+            def remoteMd5 = sh(
+                script: "curl -s http://localhost:9889 | md5sum | awk '{print \$1}'",
+                returnStdout: true
+            )
 
-                    if (status != '200' || localMd5 != remoteMd5) {
-                        error("Проверка не пройдена. HTTP: ${status}, MD5: local=${localMd5} remote=${remoteMd5}")
-                    }
-                }
+            if (status != '200' || localMd5 != remoteMd5) {
+                error("Проверка не пройдена. HTTP: ${status}, MD5: local=${localMd5} remote=${remoteMd5}")
             }
         }
+    }
+}
     }
 
     post {
