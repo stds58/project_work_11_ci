@@ -117,10 +117,10 @@ pipeline {
                 string(credentialsId: 'telegram-bot-token', variable: 'BOT_TOKEN'),
                 string(credentialsId: 'telegram-chat-id', variable: 'CHAT_ID')
             ]) {
-                sh '''
-                    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-                    -d "chat_id=${CHAT_ID}&text=❌ CI Failed: ${env.BUILD_URL}"
-                '''
+                sh """
+                    curl -s -X POST "https://api.telegram.org/bot\${BOT_TOKEN}/sendMessage" \
+                    -d "chat_id=\${CHAT_ID}&text=❌ CI Failed: ${env.BUILD_URL}"
+                """
             }
         }
     }
@@ -131,10 +131,10 @@ pipeline {
                 string(credentialsId: 'telegram-bot-token', variable: 'BOT_TOKEN'),
                 string(credentialsId: 'telegram-chat-id', variable: 'CHAT_ID')
             ]) {
-                sh '''
-                    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-                    -d "chat_id=${CHAT_ID}&text=✅ CI Success: ${env.BUILD_URL}"
-                '''
+                sh """
+                    curl -s -X POST "https://api.telegram.org/bot\${BOT_TOKEN}/sendMessage" \
+                    -d "chat_id=\${CHAT_ID}&text=✅ CI Success: ${env.BUILD_URL}"
+                """
             }
         }
     }
