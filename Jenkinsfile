@@ -108,7 +108,10 @@ pipeline {
         archiveArtifacts artifacts: 'docker-build/index.html', fingerprint: true
 
         // Очистка Docker
+        sh 'docker stop nginx-ci || true'
+        sh 'docker rm nginx-ci || true'
         sh 'docker system prune -f'
+        archiveArtifacts artifacts: 'docker-build/index.html', fingerprint: true
     }
     failure {
         // Оповещение в Telegram (исправленная версия)
